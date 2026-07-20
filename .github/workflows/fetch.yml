@@ -1,6 +1,10 @@
 name: Download Engine Files
 on:
-  workflow_dispatch: # Creates a manual play button to fetch files
+  workflow_dispatch:
+
+# This line forces GitHub to grant full write access to the automation tool
+permissions:
+  contents: write
 
 jobs:
   download-files:
@@ -9,22 +13,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create local engine folders
+      - name: Create local engine folder
         run: mkdir -p engine
 
-      - name: Download the exact files needed
+      - name: Download the exact files needed safely
         run: |
           cd engine
-          curl -O https://jsdelivr.net
-          curl -O https://jsdelivr.net
-          curl -O https://jsdelivr.net
-          curl -O https://jsdelivr.net
-          curl -O https://jsdelivr.net
+          wget https://jsdelivr.net
+          wget https://jsdelivr.net
+          wget https://jsdelivr.net
+          wget https://jsdelivr.net
+          wget https://jsdelivr.net
 
       - name: Commit and Save files to folder
         run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add engine/
           git commit -m "Downloaded local engine files to bypass browser blocks"
           git push
+
