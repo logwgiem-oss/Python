@@ -64,6 +64,9 @@ if my_number > 5:
             outputArea.innerText = "Running script...";
             
             let code = document.getElementById('codeInput').value.trim();
+            code = code.replace(/[“”]/g, '"');
+            code = code.replace(/[‘’]/g, "'");
+
 
             // Safety Catch: Stop crashes if the text field is empty
             if (!code) {
