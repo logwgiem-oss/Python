@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Mobile Python Studio</title>
+    <!-- Load Pyodide directly from your own repository folder -->
+    <script src="./engine/pyodide.js"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #121212; color: #fff; padding: 15px; margin: 0; }
+        h2 { margin-top: 0; color: #30d5c8; }
+        button, input[type="file"] { background: #1e1e1e; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; width: 100%; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; }
+        button.run-btn { background: #34c759; color: #fff; font-weight: bold; border: none; margin-top: 10px; }
+        input[type="text"] { background: #1e1e1e; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
+        textarea { width: 100%; height: 200px; background: #1e1e1e; color: #00ff00; font-family: monospace; border: 1px solid #333; padding: 10px; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        pre { background: #000; padding: 10px; border-radius: 8px; max-height: 150px; overflow-y: auto; font-family: monospace; color: #ff9500; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <h2>🐍 Mobile Python Editor</h2>
+    
+    <!-- 1. Upload Section -->
+    <label>Upload Existing File:</label>
+    <input type="file" id="fileInput" accept=".py">
+
+    <!-- 2. Library Section -->
+    <label>Libraries to install (comma separated):</label>
+    <input type="text" id="libraryInput" placeholder="e.g., requests">
+
+    <!-- 3. Editor Section -->
+    <label>Edit Code:</label>
+    <textarea id="codeInput">print("Success! Your private Python studio is fully loaded.")</textarea>
+
+    <!-- 4. Play Button -->
+    <button class="run-btn" id="runBtn">▶ RUN CODE</button>
+
+    <!-- 5. Output Console -->
+    <h3>Output:</h3>
+    <pre id="output">Loading local Python system...</pre>
+
+    <script>
+        let pyodide;
+
+        // Force Pyodide to load purely from your local engine directory
+        async function main() {
+            try {
+                pyodide = await loadPyodide({
+                    indexURL: "./engine/"
+                });
+                document.getElementById('output').innerText = "Python system loaded locally! Ready to code.";
+            } catch (err) {
+                document.getElementById('output').innerText = "Error loading engine:\n" + err;
+            }
+        }
+        main();
+
+        // Handle File Upload directly into the editor text view
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('codeInput').value = e.target.result;
+                document.getElementById('output').innerText = "File loaded successfully into editor!";
+            };
+            reader.readAsText(file);
+        });
+
+        // Handle Play Button Execution and On-the-fly Library Installation
+        document.getElementById('runBtn').addEventListener('click', async () => {
+            if (!pyodide) { alert("Python is still loading!"); return; }
+            
+            const outputArea = document.getElementById('output');
+            outputArea.innerText = "Running...";
+            
+            const libs = document.getElementById('libraryInput').value.trim();
+            const code = document.getElementById('codeInput').value;
+
+            try {
+                // Handle library installations locally if requested
+                if (libs) {
+                    outputArea.innerText = `Installing libraries: ${libs}...`;
+                    await pyodide.loadPackage("micropip");
+                    const micropip = pyodide.pyimport("micropip");
+                    const libArray = libs.split(',').map(l => l.trim());
+                    for (let lib of libArray) {
+                        await micropip.install(lib);
+                    }
+                }
+
+                // Catch the printed results and show them on-page
+                pyodide.runPython(`
+                    import sys
+                    import io
+                    sys.stdout = io.StringIO()
+                `);
+
+                await pyodide.runPythonAsync(code);
+                
+                let stdout = pyodide.runPython("sys.stdout.getvalue()");
+                outputArea.innerText = stdout || "Code executed successfully with no output returns.";
+            } catch (err) {
+                outputArea.innerText = "Error:\n" + err;
+            }
+        });
+    </script>
+</body>
+</html>
