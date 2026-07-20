@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Mobile Python Studio</title>
     <!-- Load Pyodide directly from your own repository folder -->
     <script src="./engine/pyodide.js"></script>
@@ -11,40 +11,45 @@
         h2 { margin-top: 0; color: #30d5c8; }
         button, input[type="file"] { background: #1e1e1e; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; width: 100%; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; }
         button.run-btn { background: #34c759; color: #fff; font-weight: bold; border: none; margin-top: 10px; }
-        textarea { width: 100%; height: 250px; background: #1e1e1e; color: #00ff00; font-family: monospace; border: 1px solid #333; padding: 10px; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        pre { background: #000; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; font-family: monospace; color: #ff9500; white-space: pre-wrap; }
+        textarea { width: 100%; height: 200px; background: #1e1e1e; color: #00ff00; font-family: monospace; border: 1px solid #333; padding: 10px; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        pre { background: #000; padding: 10px; border-radius: 8px; max-height: 100px; overflow-y: auto; font-family: monospace; color: #ff9500; white-space: pre-wrap; }
+        
+        /* THE GRAPHIC SCREEN WINDOW */
+        #game-box { width: 100%; max-width: 320px; height: 240px; background: #fff; border: 3px solid #333; border-radius: 12px; margin: 15px auto; display: block; position: relative; overflow: hidden; }
+        canvas { width: 100% !important; height: 100% !important; display: block; background: #fff; }
     </style>
 </head>
 <body>
 
     <h2>🐍 Mobile Python Editor</h2>
     
-    <!-- 1. Upload Section -->
+    <!-- Upload Section -->
     <label>Upload Existing File:</label>
     <input type="file" id="fileInput" accept=".py">
 
-    <!-- 2. Editor Section -->
+    <!-- Editor Section -->
     <label>Edit Code:</label>
-    <textarea id="codeInput"># Paste or type your custom scripts below!
-print("hello")
-</textarea>
+    <textarea id="codeInput"># Paste your game code here!</textarea>
 
-    <!-- 3. Play Button -->
+    <!-- Play Button -->
     <button class="run-btn" id="runBtn">▶ RUN CODE</button>
 
-    <!-- 4. Output Console -->
-    <h3>Output:</h3>
+    <!-- NEW GRAPHIC SCREEN BOX: Now index.html knows exactly how to build it -->
+    <h3>Visual Game Screen:</h3>
+    <div id="game-box">
+        <canvas id="canvas" width="320" height="240"></canvas>
+    </div>
+
+    <!-- Output Console -->
+    <h3>Output Log:</h3>
     <pre id="output">Loading local Python system...</pre>
 
     <script>
         let pyodide;
 
-        // Force Pyodide to load purely from your local engine directory
         async function main() {
             try {
-                pyodide = await loadPyodide({
-                    indexURL: "./engine/"
-                });
+                pyodide = await loadPyodide({ indexURL: "./engine/" });
                 document.getElementById('output').innerText = "Python system loaded locally! Ready to code.";
             } catch (err) {
                 document.getElementById('output').innerText = "Error loading engine:\n" + err;
@@ -52,7 +57,6 @@ print("hello")
         }
         main();
 
-        // Handle File Verification Uploads
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files;
             if (!file) return;
@@ -64,7 +68,6 @@ print("hello")
             reader.readAsText(file);
         });
 
-        // Handle Play Button Execution
         document.getElementById('runBtn').addEventListener('click', async () => {
             if (!pyodide) { alert("Python is still loading!"); return; }
             
@@ -72,23 +75,19 @@ print("hello")
             outputArea.innerText = "Running script...";
             
             let code = document.getElementById('codeInput').value.trim();
+            if (!code) { outputArea.innerText = "Error: Code field is empty."; return; }
 
-            if (!code) {
-                outputArea.innerText = "Error: Cannot execute an empty code field.";
-                return;
-            }
-
-            // FIX IPHONE SMART QUOTES
-            code = code.replace(/[“”]/g, '"');
-            code = code.replace(/[‘’]/g, "'");
+            // Fix iPhone smart quotes
+            code = code.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
 
             try {
+                // Link the canvas screen right to Pyodide graphics
+                pyodide.canvas.setCanvas2D(document.getElementById("canvas"));
+
                 await pyodide.loadPackagesFromImports(code);
 
-                // Build a clean string capture buffer for printing outputs
                 pyodide.runPython(`
-                    import sys
-                    import io
+                    import sys, io
                     sys.stdout = io.StringIO()
                     sys.stderr = io.StringIO()
                 `);
@@ -101,7 +100,7 @@ print("hello")
                 if (stderr) {
                     outputArea.innerText = "Python Error:\n" + stderr;
                 } else {
-                    outputArea.innerText = stdout || "Code ran with no errors, but did not print anything. Add a print() statement to view results!";
+                    outputArea.innerText = stdout || "Graphics updated successfully.";
                 }
             } catch (err) {
                 outputArea.innerText = "Browser Runtime Error:\n" + err.message;
@@ -110,3 +109,4 @@ print("hello")
     </script>
 </body>
 </html>
+
