@@ -12,22 +12,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create local engine folder
-        run: mkdir -p engine
-
-      - name: Download directly from GitHub Release Nodes
+      - name: Pull Core Python Engine files natively
         run: |
-          cd engine
-          wget https://github.com
-          tar -xjf pyodide-0.26.1.tar.bz2 --strip-components=1
-          rm pyodide-0.26.1.tar.bz2
+          npm install pyodide@0.26.1
+          mkdir -p engine
+          cp node_modules/pyodide/* engine/
 
       - name: Commit and Save files to folder
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add engine/
-          git commit -m "Pulled core Python binaries straight from GitHub network"
+          git commit -m "Installed core Pyodide binaries cleanly via package manager"
           git push
+
 
 
