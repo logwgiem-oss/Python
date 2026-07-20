@@ -1,0 +1,30 @@
+name: Download Engine Files
+on:
+  workflow_dispatch: # Creates a manual play button to fetch files
+
+jobs:
+  download-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create local engine folders
+        run: mkdir -p engine
+
+      - name: Download the exact files needed
+        run: |
+          cd engine
+          curl -O https://jsdelivr.net
+          curl -O https://jsdelivr.net
+          curl -O https://jsdelivr.net
+          curl -O https://jsdelivr.net
+          curl -O https://jsdelivr.net
+
+      - name: Commit and Save files to folder
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add engine/
+          git commit -m "Downloaded local engine files to bypass browser blocks"
+          git push
