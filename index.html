@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Mobile Graphic Engine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Mobile Python Studio</title>
     <!-- Load Pyodide directly from your own repository folder -->
     <script src="./engine/pyodide.js"></script>
     <style>
@@ -11,17 +11,13 @@
         h2 { margin-top: 0; color: #30d5c8; }
         button, input[type="file"] { background: #1e1e1e; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; width: 100%; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; }
         button.run-btn { background: #34c759; color: #fff; font-weight: bold; border: none; margin-top: 10px; }
-        textarea { width: 100%; height: 200px; background: #1e1e1e; color: #00ff00; font-family: monospace; border: 1px solid #333; padding: 10px; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        pre { background: #000; padding: 10px; border-radius: 8px; max-height: 100px; overflow-y: auto; font-family: monospace; color: #ff9500; white-space: pre-wrap; }
-        
-        /* The Visual Monitor for Pygame & Turtle Graphics */
-        #canvas-container { width: 100%; max-width: 400px; margin: 15px auto; display: block; background: #fff; border: 2px solid #333; border-radius: 12px; overflow: hidden; }
-        canvas { width: 100% !important; height: auto !important; display: block; image-rendering: pixelated; background: #fff; }
+        textarea { width: 100%; height: 250px; background: #1e1e1e; color: #00ff00; font-family: monospace; border: 1px solid #333; padding: 10px; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        pre { background: #000; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; font-family: monospace; color: #ff9500; white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
-    <h2>🐍 Mobile Graphic Engine</h2>
+    <h2>🐍 Mobile Python Editor</h2>
     
     <!-- 1. Upload Section -->
     <label>Upload Existing File:</label>
@@ -29,45 +25,26 @@
 
     <!-- 2. Editor Section -->
     <label>Edit Code:</label>
-    <textarea id="codeInput"># --- TEST TURTLE CODE ---
-from turtle import *
-import turtle
-
-# Clear previous graphics
-turtle.Screen().clear()
-
-speed(3)
-pensize(5)
-color("blue")
-
-# Draw a square
-for i in range(4):
-    forward(100)
-    left(90)
-
-# Browser safety rule: keeps the canvas alive in Safari
-turtle.Screen()._root.mainloop()
+    <textarea id="codeInput"># Paste or type your custom scripts below!
+print("hello")
 </textarea>
 
     <!-- 3. Play Button -->
-    <button class="run-btn" id="runBtn">▶ RUN SCRIPT</button>
+    <button class="run-btn" id="runBtn">▶ RUN CODE</button>
 
-    <!-- 4. The Graphic Monitor Screen -->
-    <h3>Graphic Canvas:</h3>
-    <div id="canvas-container">
-        <canvas id="canvas" width="400" height="300"></canvas>
-    </div>
-
-    <!-- 5. Output Log -->
-    <h3>Output Log:</h3>
+    <!-- 4. Output Console -->
+    <h3>Output:</h3>
     <pre id="output">Loading local Python system...</pre>
 
     <script>
         let pyodide;
 
+        // Force Pyodide to load purely from your local engine directory
         async function main() {
             try {
-                pyodide = await loadPyodide({ indexURL: "./engine/" });
+                pyodide = await loadPyodide({
+                    indexURL: "./engine/"
+                });
                 document.getElementById('output').innerText = "Python system loaded locally! Ready to code.";
             } catch (err) {
                 document.getElementById('output').innerText = "Error loading engine:\n" + err;
@@ -75,40 +52,40 @@ turtle.Screen()._root.mainloop()
         }
         main();
 
+        // Handle File Verification Uploads
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files;
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('codeInput').value = e.target.result;
-                document.getElementById('output').innerText = "File loaded successfully!";
+                document.getElementById('output').innerText = "File loaded successfully into editor!";
             };
             reader.readAsText(file);
         });
 
+        // Handle Play Button Execution
         document.getElementById('runBtn').addEventListener('click', async () => {
             if (!pyodide) { alert("Python is still loading!"); return; }
             
             const outputArea = document.getElementById('output');
-            outputArea.innerText = "Processing graphic loops...";
+            outputArea.innerText = "Running script...";
             
             let code = document.getElementById('codeInput').value.trim();
 
             if (!code) {
-                outputArea.innerText = "Error: Code field is empty.";
+                outputArea.innerText = "Error: Cannot execute an empty code field.";
                 return;
             }
 
-            // Fix iPhone smart punctuation issues
+            // FIX IPHONE SMART QUOTES
             code = code.replace(/[“”]/g, '"');
             code = code.replace(/[‘’]/g, "'");
 
             try {
-                // Link the canvas box so both Pygame AND Turtle can draw into it
-                pyodide.canvas.setCanvas2D(document.getElementById("canvas"));
-
                 await pyodide.loadPackagesFromImports(code);
 
+                // Build a clean string capture buffer for printing outputs
                 pyodide.runPython(`
                     import sys
                     import io
@@ -124,10 +101,10 @@ turtle.Screen()._root.mainloop()
                 if (stderr) {
                     outputArea.innerText = "Python Error:\n" + stderr;
                 } else {
-                    outputArea.innerText = stdout || "Graphics rendered perfectly.";
+                    outputArea.innerText = stdout || "Code ran with no errors, but did not print anything. Add a print() statement to view results!";
                 }
             } catch (err) {
-                outputArea.innerText = "Graphics Runtime Error:\n" + err.message;
+                outputArea.innerText = "Browser Runtime Error:\n" + err.message;
             }
         });
     </script>
